@@ -7,12 +7,12 @@ pub struct ComputeState {
     device: wgpu::Device,
     queue: wgpu::Queue,
     compute_pipeline: wgpu::ComputePipeline,
-    vertex_buffer: wgpu::Buffer,
+    // vertex_buffer: wgpu::Buffer,
 }
 
 impl ComputeState {
     // Creating some of the wgpu types requires async code
-    async fn new() -> ComputeState {
+    pub async fn new() -> ComputeState {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
             ..Default::default()
@@ -37,16 +37,18 @@ impl ComputeState {
             )
             .await
             .unwrap();
-        device.limits()
+        let limits = device.limits();
+        tracing::info!("HELLO???!");
+        tracing::info!(?limits, "Loaded device");
 
         let compute_shader =
-            device.create_shader_module(wgpu::include_wgsl!("../shaders/test1.wgsl"));
+            device.create_shader_module(wgpu::include_wgsl!("../shaders/test_compute.wgsl"));
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[],
             push_constant_ranges: &[],
         });
-        let render_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
             module: &compute_shader,
@@ -55,46 +57,44 @@ impl ComputeState {
             cache: None,
         });
 
-        // Self {
-        //     device,
-        //     queue,
-        //     compute_pipeline: render_pipeline,
-        //     vertex_buffer: buffer,t
-        todo!()
+        Self {
+            device,
+            queue,
+            compute_pipeline,
+            // vertex_buffer: buffer,
+        }
     }
-    pub fn compute(path1:&Path,path2:&Path){
-        let (image1,dim1)=load_tiff_image(path1).unwrap();
-        let (image2,dim2)=load_tiff_image(path2).unwrap();
-        let texture1_size=Extent3d{
-            width:dim1.0,
-            height:dim1.1,
-            depth_or_array_layers:1
+    pub fn compute(path1: &Path, path2: &Path) {
+        let (image1, dim1) = load_tiff_image(path1).unwrap();
+        let (image2, dim2) = load_tiff_image(path2).unwrap();
+        let texture1_size = Extent3d {
+            width: dim1.0,
+            height: dim1.1,
+            depth_or_array_layers: 1,
         };
-        let texture2_size=Extent3d{
-            width:dim2.0,
-            height:dim2.1,
-            depth_or_array_layers:1
+        let texture2_size = Extent3d {
+            width: dim2.0,
+            height: dim2.1,
+            depth_or_array_layers: 1,
         };
-        
     }
 }
 
-pub fn load_tiff_image(path: &std::path::Path) -> std::io::Result<(Vec<u8>,(u32,u32))> {
+pub fn load_tiff_image(path: &std::path::Path) -> std::io::Result<(Vec<u8>, (u32, u32))> {
     let file = std::fs::File::open(path)?;
 
     let mut image = tiff::decoder::Decoder::new(file).unwrap();
-    let dim=image.dimensions().unwrap();
+    let dim = image.dimensions().unwrap();
 
     let mut image = image.read_image().unwrap();
-   
-   
+
     let tiff::decoder::DecodingBuffer::F32(buf) = image.as_buffer(0) else {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "Could not decode as f32 image",
         ));
     };
-    Ok((bytemuck::cast_slice(buf).to_owned(),dim))
+    Ok((bytemuck::cast_slice(buf).to_owned(), dim))
 }
 #[test]
 pub fn test_image_load() -> std::io::Result<()> {

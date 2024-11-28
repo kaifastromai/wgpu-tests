@@ -1,4 +1,4 @@
-use wgpu_tests::run;
+use wgpu_tests::{compute_pixel_dif::ComputeState, run};
 
 fn main() {
     let env_filter = tracing_subscriber::filter::EnvFilter::from_default_env();
@@ -8,5 +8,6 @@ fn main() {
         .with_line_number(true)
         .init();
     tracing::info!("Starting app");
-    pollster::block_on(run())
+    let com=ComputeState::new();
+    pollster::block_on(com);
 }

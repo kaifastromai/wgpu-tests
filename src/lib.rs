@@ -1,4 +1,4 @@
-mod compute_pixel_dif;
+pub mod compute_pixel_dif;
 
 use tracing_subscriber::*;
 use wgpu::{
